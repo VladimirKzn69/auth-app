@@ -10,3 +10,13 @@ tower-http = { version = "0.5", features = ["cors"] }
 dotenvy = "0.15"
 tracing = "0.1"
 tracing-subscriber = "0.3"
+# ... существующие зависимости ...
+sqlx = { version = "0.7", features = [
+  "postgres",
+  "runtime-tokio",
+  "uuid",
+  "chrono",
+  "tls-native-tls"
+] }
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
