@@ -124,6 +124,7 @@ dependencies = [
  "axum",
  "chrono",
  "dotenvy",
+ "serde",
  "sqlx",
  "tokio",
  "tower-http",

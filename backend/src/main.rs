@@ -2,9 +2,10 @@ use axum::{routing::get, Router};
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
 use ::std::time::Duration;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+
+mod models;
 
 #[derive(Clone)] // Важно для axum: состояние должно быть клонируемым
 struct AppState {
