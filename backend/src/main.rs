@@ -7,6 +7,7 @@ use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 mod models;
 mod repositories;
+mod services;
 
 #[derive(Clone)] // Важно для axum: состояние должно быть клонируемым
 struct AppState {
