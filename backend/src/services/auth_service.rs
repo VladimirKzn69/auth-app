@@ -1,5 +1,5 @@
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
 use sqlx::{Pool, Postgres};
@@ -66,4 +66,54 @@ fn hash_password(password: &str) -> Result<String, argon2::password_hash::Error>
     let argon2 = Argon2::default();
     let password_hash = argon2.hash_password(password.as_bytes(), &salt)?;
     Ok(password_hash.to_string())
+}
+/// Ошибки, которые могут возникнуть при логине
+#[derive(Debug)]
+pub enum LoginError {
+    InvalidCredentials,      // Неверный email или пароль (одна ошибка для безопасности!)
+    DatabaseError(sqlx::Error),
+}
+
+/// Авторизует пользователя по email и паролю
+/// 
+/// # Шаги
+/// 1. Ищет пользователя по email
+/// 2. Проверяет пароль через argon2
+/// 
+/// # Возвращает
+/// * `Ok(User)` — успешная авторизация
+/// * `Err(LoginError)` — ошибка авторизации
+pub async fn login_user(
+    pool: &Pool<Postgres>,
+    email: &str,
+    password: &str,
+) -> Result<User, LoginError> {
+    // Шаг 1: Ищем пользователя по email
+    let user = user_repository::find_by_email(pool, email)
+        .await
+        .map_err(LoginError::DatabaseError)?
+        .ok_or(LoginError::InvalidCredentials)?;  // Не найден = неверные данные
+
+    // Шаг 2: Проверяем пароль
+    if !verify_password(password, &user.password_hash) {
+        return Err(LoginError::InvalidCredentials);  // Не совпал = неверные данные
+    }
+
+    Ok(user)
+}
+
+/// Проверяет пароль против хеша
+/// 
+/// Возвращает true если пароль верный, false если нет
+pub fn verify_password(password: &str, hash: &str) -> bool {
+    // Парсим хеш из строки
+    let parsed_hash = match PasswordHash::new(hash) {
+        Ok(h) => h,
+        Err(_) => return false,
+    };
+    
+    // Проверяем пароль
+    Argon2::default()
+        .verify_password(password.as_bytes(), &parsed_hash)
+        .is_ok()
 }

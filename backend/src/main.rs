@@ -51,6 +51,7 @@ async fn main() {
         get(|| async { "✅ Clean auth-app backend is running!" }),
     )
     .route("/register", post(handlers::auth_handler::register))
+    .route("/login", post(handlers::auth_handler::login))
     .layer(cors)
     .with_state(app_state);
 

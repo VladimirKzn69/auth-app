@@ -7,8 +7,8 @@ use axum::{
 // use sqlx::{Pool, Postgres};
 use crate::AppState;
 
-use crate::models::{CreateUser, UserResponse};
-use crate::services::auth_service::{self, RegisterError};
+use crate::models::{CreateUser, LoginRequest, UserResponse};
+use crate::services::auth_service::{self, LoginError, RegisterError};
 
 // ═══════════════════════════════════════════════════════════════════
 // AuthHandler — HTTP-обработчики для аутентификации
@@ -56,6 +56,40 @@ pub async fn register(
         // Ошибка БД — 500
         Err(RegisterError::DatabaseError(e)) => {
             tracing::error!("Database error: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
+                "error": "Internal server error"
+            }))).into_response()
+        }
+    }
+}
+/// POST /login — авторизация пользователя
+/// 
+/// # Принимает
+/// JSON с полями: email, password
+/// 
+/// # Возвращает
+/// * 200 OK + данные пользователя
+/// * 401 Unauthorized — неверные учётные данные
+/// * 500 Internal Server Error — ошибка сервера
+pub async fn login(
+    State(state): State<AppState>,
+    Json(login_data): Json<LoginRequest>,
+) -> impl IntoResponse {
+    match auth_service::login_user(&state.db, &login_data.email, &login_data.password).await {
+        // Успех — возвращаем 200 OK
+        Ok(user) => {
+            let response = UserResponse::from(user);
+            (StatusCode::OK, Json(response)).into_response()
+        }
+        // Неверные данные — 401 Unauthorized
+        Err(LoginError::InvalidCredentials) => {
+            (StatusCode::UNAUTHORIZED, Json(serde_json::json!({
+                "error": "Invalid credentials"
+            }))).into_response()
+        }
+        // Ошибка БД — 500
+        Err(LoginError::DatabaseError(e)) => {
+            tracing::error!("Database error during login: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
                 "error": "Internal server error"
             }))).into_response()
