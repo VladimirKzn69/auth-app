@@ -7,5 +7,5 @@ CREATE TABLE users (
   password_hash TEXT NOT NULL,
   first_name TEXT NOT NULL CHECK (first_name <> ''),
   last_name TEXT NOT NULL CHECK (last_name <> ''),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

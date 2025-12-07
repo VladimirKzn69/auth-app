@@ -6,6 +6,7 @@ use ::std::time::Duration;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 mod models;
+mod repositories;
 
 #[derive(Clone)] // Важно для axum: состояние должно быть клонируемым
 struct AppState {
