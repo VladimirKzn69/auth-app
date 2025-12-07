@@ -1,4 +1,4 @@
-use axum::{routing::get, Router};
+use axum::{routing::{get, post}, Router};
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -8,9 +8,10 @@ use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 mod models;
 mod repositories;
 mod services;
+mod handlers;
 
 #[derive(Clone)] // Важно для axum: состояние должно быть клонируемым
-struct AppState {
+pub struct AppState {
     db: Pool<Postgres>, // Пул соединений с PostgreSQL
     jwt_secret: String, // Секретный ключ для JWT
 }
@@ -44,15 +45,14 @@ async fn main() {
 
     let cors = CorsLayer::new().allow_origin(Any);
 
-    // --- Изменяем Router: передаём app_state ---
     let app = Router::new()
-        .route(
-            "/",
-            get(|| async { "✅ Clean auth-app backend is running!" }),
-        )
-        .layer(cors)
-        .with_state(app_state); // <-- .with_state(app_state) добавлено
-                                // --- Конец изменения Router ---
+    .route(
+        "/",
+        get(|| async { "✅ Clean auth-app backend is running!" }),
+    )
+    .route("/register", post(handlers::auth_handler::register))
+    .layer(cors)
+    .with_state(app_state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
     tracing::info!("🚀 Server started on http://{}", addr);
