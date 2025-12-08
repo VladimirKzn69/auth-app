@@ -2,9 +2,10 @@ use axum::{
     extract::State,
     http::StatusCode,
     response::IntoResponse,
+    Extension,
     Json,
 };
-
+use uuid::Uuid;
 use crate::AppState;
 use crate::models::{CreateUser, LoginRequest, UserResponse};
 use crate::services::auth_service::{self, LoginError, RegisterError};
@@ -104,6 +105,38 @@ pub async fn login(
         // Ошибка БД — 500
         Err(LoginError::DatabaseError(e)) => {
             tracing::error!("Database error during login: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
+                "error": "Internal server error"
+            }))).into_response()
+        }
+    }
+}
+/// GET /me — получить данные текущего пользователя
+/// 
+/// # Требует
+/// Валидный JWT-токен в заголовке Authorization
+/// 
+/// # Возвращает
+/// * 200 OK + данные пользователя
+/// * 401 Unauthorized — токен отсутствует или невалидный
+/// * 404 Not Found — пользователь не найден
+pub async fn me(
+    State(state): State<AppState>,
+    Extension(user_id): Extension<Uuid>,
+) -> impl IntoResponse {
+    // Ищем пользователя по ID из токена
+    match crate::repositories::user_repository::find_by_id(&state.db, user_id).await {
+        Ok(Some(user)) => {
+            let response = UserResponse::from(user);
+            (StatusCode::OK, Json(response)).into_response()
+        }
+        Ok(None) => {
+            (StatusCode::NOT_FOUND, Json(serde_json::json!({
+                "error": "User not found"
+            }))).into_response()
+        }
+        Err(e) => {
+            tracing::error!("Database error: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
                 "error": "Internal server error"
             }))).into_response()

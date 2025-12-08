@@ -4,11 +4,13 @@ use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use ::std::time::Duration;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+use axum::middleware as axum_middleware;
 
 mod models;
 mod repositories;
 mod services;
 mod handlers;
+mod middleware;
 
 #[derive(Clone)] // Важно для axum: состояние должно быть клонируемым
 pub struct AppState {
@@ -45,13 +47,23 @@ async fn main() {
 
     let cors = CorsLayer::new().allow_origin(Any);
 
-    let app = Router::new()
+   // Защищённые маршруты (требуют JWT)
+let protected_routes = Router::new()
+    .route("/me", get(handlers::auth_handler::me))
+    .layer(axum_middleware::from_fn_with_state(
+        app_state.clone(),
+        middleware::auth::auth_middleware,
+    ));
+
+// Основное приложение
+let app = Router::new()
     .route(
         "/",
         get(|| async { "✅ Clean auth-app backend is running!" }),
     )
     .route("/register", post(handlers::auth_handler::register))
     .route("/login", post(handlers::auth_handler::login))
+    .merge(protected_routes)
     .layer(cors)
     .with_state(app_state);
 
