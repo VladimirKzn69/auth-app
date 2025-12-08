@@ -7,8 +7,8 @@ use axum::{
 };
 use uuid::Uuid;
 
-use crate::AppState;
 use crate::services::jwt_service;
+use crate::AppState;
 
 // ═══════════════════════════════════════════════════════════════════
 // Auth Middleware — проверка JWT-токена
@@ -20,7 +20,7 @@ use crate::services::jwt_service;
 // 4. Пропускает запрос дальше или возвращает 401
 
 /// Middleware для проверки JWT-токена
-/// 
+///
 /// # Как использовать
 /// Добавить к защищённым маршрутам через `.layer()`
 pub async fn auth_middleware(
