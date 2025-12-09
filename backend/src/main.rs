@@ -7,6 +7,7 @@ use axum::{
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
+use http::Method;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod handlers;
@@ -48,7 +49,10 @@ async fn main() {
         jwt_secret,
     };
 
-    let cors = CorsLayer::new().allow_origin(Any);
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+        .allow_headers(Any);
 
     // Защищённые маршруты (требуют JWT)
     let protected_routes = Router::new()
