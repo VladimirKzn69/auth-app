@@ -19,12 +19,14 @@ use backend::{create_app, AppState};
 // ═══════════════════════════════════════════════════════════════════
 
 async fn get_test_db() -> Pool<Postgres> {
-    let database_url = "postgres://dev_user:dev_pass@localhost:5435/auth_db_test";
+    // Берём URL из переменной окружения или используем дефолтный (локальный)
+    let database_url = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgres://dev_user:dev_pass@localhost:5435/auth_db_test".to_string());
     
     PgPoolOptions::new()
         .max_connections(5)
         .acquire_timeout(Duration::from_secs(3))
-        .connect(database_url)
+        .connect(&database_url)
         .await
         .expect("Failed to connect to test database")
 }
