@@ -1,8 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════
 // useAuth — composable для управления аутентификацией
 // ═══════════════════════════════════════════════════════════════════
-// Аналог auth_service в Rust.
-// Содержит состояние пользователя и методы для входа/выхода/регистрации.
 
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
@@ -10,9 +8,19 @@ import * as authApi from '@/api/auth'
 import type { User, RegisterData, LoginData } from '@/api/auth'
 
 // ═══════════════════════════════════════════════════════════════════
-// Глобальное состояние (хранится между вызовами useAuth)
+// Тип для ошибок Axios
 // ═══════════════════════════════════════════════════════════════════
-// ref() — реактивная переменная. Когда она меняется, UI обновляется.
+interface ApiError {
+  response?: {
+    data?: {
+      error?: string
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Глобальное состояние
+// ═══════════════════════════════════════════════════════════════════
 const user = ref<User | null>(null)
 const token = ref<string | null>(localStorage.getItem('token'))
 const isLoading = ref(false)
@@ -24,7 +32,6 @@ const error = ref<string | null>(null)
 export function useAuth() {
   const router = useRouter()
 
-  // computed() — вычисляемое свойство, автоматически пересчитывается
   const isAuthenticated = computed(() => !!token.value)
 
   // ─────────────────────────────────────────────────────────────────
@@ -36,12 +43,11 @@ export function useAuth() {
 
     try {
       await authApi.register(data)
-      // После успешной регистрации перенаправляем на логин
       router.push('/login')
       return true
-    } catch (err: any) {
-      // Извлекаем сообщение об ошибке от бэкенда
-      error.value = err.response?.data?.error || 'Ошибка регистрации'
+    } catch (err: unknown) {
+      const apiError = err as ApiError
+      error.value = apiError.response?.data?.error || 'Ошибка регистрации'
       return false
     } finally {
       isLoading.value = false
@@ -57,15 +63,14 @@ export function useAuth() {
 
     try {
       const response = await authApi.login(data)
-      // Сохраняем токен и данные пользователя
       token.value = response.token
       user.value = response.user
       localStorage.setItem('token', response.token)
-      // Перенаправляем на профиль
       router.push('/profile')
       return true
-    } catch (err: any) {
-      error.value = err.response?.data?.error || 'Неверный email или пароль'
+    } catch (err: unknown) {
+      const apiError = err as ApiError
+      error.value = apiError.response?.data?.error || 'Неверный email или пароль'
       return false
     } finally {
       isLoading.value = false
@@ -91,15 +96,13 @@ export function useAuth() {
     isLoading.value = true
     try {
       user.value = await authApi.getMe()
-    } catch (err: any) {
-      // Если токен невалидный — выходим
+    } catch (_err: unknown) {
       logout()
     } finally {
       isLoading.value = false
     }
   }
 
-  // Возвращаем состояние и методы для использования в компонентах
   return {
     user,
     token,
