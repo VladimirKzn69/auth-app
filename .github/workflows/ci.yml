@@ -58,7 +58,7 @@ jobs:
 
       # Устанавливаем sqlx-cli для миграций
       - name: Install sqlx-cli
-        run: cargo install sqlx-cli --no-default-features --features postgres
+        run: cargo install sqlx-cli --no-default-features --features postgres --force
 
       # Применяем миграции
       - name: Run migrations
