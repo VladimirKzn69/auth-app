@@ -96,7 +96,7 @@ export function useAuth() {
     isLoading.value = true
     try {
       user.value = await authApi.getMe()
-    } catch (_err: unknown) {
+    } catch {
       logout()
     } finally {
       isLoading.value = false
