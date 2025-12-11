@@ -9,7 +9,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+use sqlx::{postgres::PgPoolOptions, Pool, Postgres, migrate::MigrateDatabase};
 use std::time::Duration;
 use tower_http::cors::{Any, CorsLayer};
 use http::Method;
