@@ -8,7 +8,7 @@ import axios from 'axios'
 
 // Создаём экземпляр axios с базовыми настройками
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8080', // Адрес нашего Rust-бэкенда
+  baseURL: import.meta.env.VITA_API_URL || 'http://localhost:8080', // Адрес нашего Rust-бэкенда
   headers: {
     'Content-Type': 'application/json',
   },
