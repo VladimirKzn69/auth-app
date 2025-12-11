@@ -23,6 +23,10 @@ async fn main() {
         .expect("DATABASE_URL must be set");
     let db_pool = connect_db(&database_url).await;
 
+    // 🆕 Применение миграций
+    backend::run_migrations(&db_pool).await;
+    tracing::info!("✅ Migrations applied successfully");
+    
     // Получение JWT-секрета
     let jwt_secret = std::env::var("JWT_SECRET")
         .expect("JWT_SECRET must be set");
